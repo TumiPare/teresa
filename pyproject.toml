@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "teresa"
+version = "0.1.0"
+description = ""
+authors = ["Tumi Pare <tumishangpare@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+beautifulsoup4 = "^4.12.2"
+requests = "^2.31.0"
+pycryptodome = "^3.19.0"
+oliver-dl = "^0.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
