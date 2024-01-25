@@ -18,5 +18,5 @@ poetry install
 
 **Run scrapper**
 ```bash
-python teresa/scrapper.py
+python teresa
 ```
