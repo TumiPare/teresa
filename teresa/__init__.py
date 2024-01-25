@@ -1,1 +1,1 @@
-from teresa import scrapper
+from teresa import teresa
