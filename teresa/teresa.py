@@ -38,11 +38,11 @@ class teresa:
         parser.add_argument("-l","--link", action="store_true", help="get the link to the episode")
         args = parser.parse_args()
         if args.download:
-            self.download(self.cli_helper)
+            self.download(self.cli_helper())
         elif args.link:
-            print(self.cli_helper)
+            print(self.cli_helper())
         else:
-            self.stream(self.cli_helper)
+            self.stream(self.cli_helper())
 
         
         
@@ -107,7 +107,6 @@ class teresa:
         decrypted_value.update(id=enc_id)
 
         url = f"https://draplay2.pro/encrypt-ajax.php?id={urlencode(decrypted_value)}&alias={id}"
-        print(url)
         
         final_response = self.session.get(url).json().get("data")
         json_resp = json.loads(
