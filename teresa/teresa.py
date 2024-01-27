@@ -18,7 +18,7 @@ class teresa:
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
-    def cli(self):
+    def cli_helper(self):        
         search_query = input("Search Kdrama: ")
         search_results = self.search(search_query )
  
@@ -30,18 +30,21 @@ class teresa:
         ep_range = self.get_ep_range(show_url)
         episode = input(f"Choose an episode[{ep_range}]: ")
     
-        m3u8_url = self.get_link(show_url, episode)
+        return self.get_link(show_url, episode)
         
+    def cli(self):
         parser = argparse.ArgumentParser()
         parser.add_argument("-d","--download", action="store_true", help="download the episode")
         parser.add_argument("-l","--link", action="store_true", help="get the link to the episode")
         args = parser.parse_args()
         if args.download:
-            self.download(m3u8_url)
+            self.download(self.cli_helper)
         elif args.link:
-            print(m3u8_url)
+            print(self.cli_helper)
         else:
-            self.stream(m3u8_url)
+            self.stream(self.cli_helper)
+
+        
         
     def get_ep_range(self,show_url):
         page = self.session.get(show_url)
