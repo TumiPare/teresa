@@ -17,22 +17,20 @@ class teresa:
         adapter = requests.adapters.HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
-        self.a_tags = None
 
     def cli(self):
         search_query = input("Search Kdrama: ")
-        self.search(search_query )
-        
-        for index, tag in enumerate(self.a_tags):
+        search_results = self.search(search_query )
+ 
+        for index, tag in enumerate(search_results):
             print(f"[{index}] {tag['title']}")
 
         show = input("Choose a show: ")
-        show_url = self.site + self.a_tags[int(show)].get("href").replace('/drama', '/watch') + "/watching.html"
+        show_url = self.site + search_results[int(show)]["href"].replace('/drama', '/watch') + "/watching.html"
         ep_range = self.get_ep_range(show_url)
         episode = input(f"Choose an episode[{ep_range}]: ")
     
-        show_url = show_url + "?ep=" + episode
-        m3u8_url = self.get_link(show_url)
+        m3u8_url = self.get_link(show_url, episode)
         
         parser = argparse.ArgumentParser()
         parser.add_argument("-d","--download", action="store_true", help="download the episode")
@@ -60,57 +58,57 @@ class teresa:
         if len(soup) == 0:
             print("No results found")
             exit()
-        self.a_tags = soup[0].find_all("a", {"class": "ml-mask jt"})
+        a_tags = soup[0].find_all("a", {"class": "ml-mask jt"})
+        bobby = [];
+        for tag in a_tags:
+            bobby.append({
+                "href": tag.get("href"),
+                "title": tag.get("title")
+            })
+        return bobby
 
-           
-    def get_link(self, url):
-        page = self.session.get(url)
-        soup = BeautifulSoup(page.content, "html.parser").select('#media-player')
-        iframe =  soup[0].find("iframe")
-        iframe_url = "https:" + iframe['src']
-
-        e = "93422192433952489752342908585752"
-        i = "9262859232435825"
-
-        response = self.session.get(iframe_url)
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        crypto = soup.find("script", {"data-name": "crypto"})
-        crypto_script_value = crypto["data-value"]
-
-        key = e.encode('utf-8')
-        iv = i.encode('utf-8')
-
-
-        
-
-        def aes_encrypt(data, key, iv):
+    def aes_encrypt(self, data, key, iv):
                 pad = lambda s: s + chr(len(s) % 16) * (16 - len(s) % 16)
                 return base64.b64encode(
                     AES.new(key, AES.MODE_CBC, iv=iv).encrypt(pad(data).encode())
                 )
 
-        def aes_decrypt(data, key, iv):
-                return (
-                    AES.new(key, AES.MODE_CBC, iv=iv)
-                    .decrypt(base64.b64decode(data))
-                    .strip(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10")
-                )
+    def aes_decrypt(self, data, key, iv):
+            return (
+                AES.new(key, AES.MODE_CBC, iv=iv)
+                .decrypt(base64.b64decode(data))
+                .strip(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10")
+            )
+           
+    def get_link(self, url,episode):
+        url = url + "?ep=" + episode
+        page = self.session.get(url)
+        soup = BeautifulSoup(page.content, "html.parser").select('#media-player')
+        iframe =  soup[0].find("iframe")
+        iframe_url = "https:" + iframe['src']
 
-        decrypted_value = aes_decrypt(crypto_script_value,key,iv)
+        response = self.session.get(iframe_url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        crypto = soup.find("script", {"data-name": "crypto"})
+        crypto_script_value = crypto["data-value"]
+
+        key = "93422192433952489752342908585752".encode('utf-8')
+        iv = "9262859232435825".encode('utf-8')
+
+        decrypted_value = self.aes_decrypt(crypto_script_value,key,iv)
         decrypted_value = dict(parse_qsl(decrypted_value))
 
         id = urlparse(iframe_url).query
         id = dict(parse_qsl(id))["id"]
-        enc_id = aes_encrypt(id, key, iv).decode()
+        enc_id = self.aes_encrypt(id, key, iv).decode()
         decrypted_value.update(id=enc_id)
 
-        url = f" https://draplay2.pro/encrypt-ajax.php?id={urlencode(decrypted_value)}&alias={id}"
+        url = f"https://draplay2.pro/encrypt-ajax.php?id={urlencode(decrypted_value)}&alias={id}"
         print(url)
         
         final_response = self.session.get(url).json().get("data")
         json_resp = json.loads(
-                    aes_decrypt(
+                    self.aes_decrypt(
                         final_response, key, iv
                     )
                 )

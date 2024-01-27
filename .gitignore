@@ -2,3 +2,4 @@
 *.mp4
 *.ts
 .vscode/*
+__pycache__
