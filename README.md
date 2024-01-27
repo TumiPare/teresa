@@ -16,7 +16,15 @@ poetry shell
 poetry install
 ```
 
-**Run scrapper**
+**Run**
 ```bash
 python teresa
+```
+```
+usage: teresa [-h] [-d] [-l]
+
+options:
+  -h, --help      show this help message and exit
+  -d, --download  download the episode
+  -l, --link      get the link to the episode
 ```
